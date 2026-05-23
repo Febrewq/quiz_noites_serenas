@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diagnóstico do Sono — Ana Serena</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --deep: #0d0618;
+    --purple: #2d1b4e;
+    --violet: #4a2080;
+    --pink: #c2185b;
+    --rose: #e91e8c;
+    --lavender: #9c6fce;
+    --soft: #d4a8ff;
+    --text: #f0e6ff;
+    --muted: #b09cc0;
+    --white: #ffffff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--deep);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    overflow-x: hidden;
+  }
+
+  /* ─── BLOBS ─── */
+  .blob {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(90px);
+    opacity: 0.2;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .blob-1 { width: 500px; height: 500px; background: var(--violet); top: -150px; right: -150px; }
+  .blob-2 { width: 400px; height: 400px; background: var(--pink); bottom: -100px; left: -100px; }
+  .blob-3 { width: 300px; height: 300px; background: var(--lavender); top: 50%; left: 40%; }
+
+  /* ─── CONTAINER ─── */
+  .container {
+    width: 100%;
+    max-width: 620px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ─── CARD ─── */
+  .card {
+    background: rgba(45, 27, 78, 0.6);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(212, 168, 255, 0.15);
+    border-radius: 24px;
+    padding: 48px 44px;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+  }
+
+  /* ─── HEADER ─── */
+  .quiz-header {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+
+  .moon-icon {
+    font-size: 48px;
+    display: block;
+    margin-bottom: 16px;
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  .quiz-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--rose), var(--pink));
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 6px 16px;
+    border-radius: 50px;
+    margin-bottom: 20px;
+  }
+
+  .quiz-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--white);
+    line-height: 1.2;
+    margin-bottom: 12px;
+  }
+
+  .quiz-title span {
+    background: linear-gradient(135deg, var(--soft), var(--rose));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .quiz-subtitle {
+    font-size: 15px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  /* ─── PROGRESS ─── */
+  .progress-wrap {
+    margin-bottom: 32px;
+  }
+
+  .progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .progress-label {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .progress-count {
+    font-size: 12px;
+    color: var(--rose);
+    font-weight: 600;
+  }
+
+  .progress-bar {
+    height: 4px;
+    background: rgba(212,168,255,0.1);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--rose), var(--lavender));
+    border-radius: 2px;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* ─── QUESTION ─── */
+  .question-block {
+    display: none;
+    animation: fadeSlide 0.4s ease forwards;
+  }
+
+  .question-block.active {
+    display: block;
+  }
+
+  @keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .question-number {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--rose);
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .question-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    color: var(--white);
+    line-height: 1.4;
+    margin-bottom: 28px;
+  }
+
+  /* ─── OPTIONS ─── */
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .option-btn {
+    background: rgba(13, 6, 24, 0.6);
+    border: 1px solid rgba(212,168,255,0.15);
+    border-radius: 14px;
+    padding: 18px 20px;
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: all 0.25s ease;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    width: 100%;
+  }
+
+  .option-btn:hover {
+    background: rgba(74,32,128,0.5);
+    border-color: rgba(233,30,140,0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(233,30,140,0.15);
+  }
+
+  .option-btn.selected {
+    background: linear-gradient(135deg, rgba(233,30,140,0.25), rgba(74,32,128,0.4));
+    border-color: var(--rose);
+    box-shadow: 0 8px 24px rgba(233,30,140,0.2);
+  }
+
+  .option-letter {
+    min-width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(212,168,255,0.1);
+    border: 1px solid rgba(212,168,255,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--soft);
+    transition: all 0.25s;
+  }
+
+  .option-btn.selected .option-letter {
+    background: linear-gradient(135deg, var(--rose), var(--pink));
+    border-color: transparent;
+    color: white;
+  }
+
+  /* ─── RESULT BLOCK ─── */
+  .result-block {
+    display: none;
+    text-align: center;
+    animation: fadeSlide 0.5s ease forwards;
+  }
+
+  .result-block.active {
+    display: block;
+  }
+
+  .result-emoji {
+    font-size: 56px;
+    display: block;
+    margin-bottom: 20px;
+  }
+
+  .result-badge {
+    display: inline-block;
+    padding: 6px 18px;
+    border-radius: 50px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  .result-badge.quente { background: linear-gradient(135deg, #e91e8c, #c2185b); color: white; }
+  .result-badge.medio { background: linear-gradient(135deg, #9c6fce, #4a2080); color: white; }
+  .result-badge.inicio { background: linear-gradient(135deg, #4a2080, #2d1b4e); color: var(--soft); border: 1px solid rgba(212,168,255,0.3); }
+
+  .result-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    color: var(--white);
+    line-height: 1.3;
+    margin-bottom: 20px;
+  }
+
+  .result-title span {
+    background: linear-gradient(135deg, var(--soft), var(--rose));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .result-divider {
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--rose), var(--lavender));
+    border-radius: 2px;
+    margin: 0 auto 24px;
+  }
+
+  .result-text {
+    font-size: 15px;
+    color: var(--muted);
+    line-height: 1.9;
+    margin-bottom: 32px;
+    text-align: left;
+    background: rgba(13,6,24,0.5);
+    border: 1px solid rgba(212,168,255,0.1);
+    border-left: 3px solid var(--rose);
+    border-radius: 12px;
+    padding: 20px 24px;
+  }
+
+  .result-text strong { color: var(--soft); }
+
+  .urgency-box {
+    background: linear-gradient(135deg, rgba(233,30,140,0.15), rgba(74,32,128,0.3));
+    border: 1px solid rgba(233,30,140,0.3);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 28px;
+  }
+
+  .urgency-box p {
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.7;
+  }
+
+  .urgency-box strong { color: var(--rose); }
+
+  .price-tag {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .price-old {
+    font-size: 16px;
+    color: var(--muted);
+    text-decoration: line-through;
+  }
+
+  .price-new {
+    font-family: 'Playfair Display', serif;
+    font-size: 40px;
+    color: var(--white);
+    font-weight: 700;
+  }
+
+  .price-new span {
+    font-size: 20px;
+    color: var(--muted);
+  }
+
+  .price-label {
+    background: linear-gradient(135deg, var(--rose), var(--pink));
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 50px;
+    letter-spacing: 1px;
+  }
+
+  .cta-btn {
+    display: block;
+    width: 100%;
+    background: linear-gradient(135deg, var(--rose), var(--pink));
+    color: white;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 20px 32px;
+    border-radius: 16px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 32px rgba(233,30,140,0.35);
+    margin-bottom: 16px;
+  }
+
+  .cta-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 48px rgba(233,30,140,0.45);
+  }
+
+  .cta-guarantee {
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  /* ─── INTRO SCREEN ─── */
+  .intro-screen {
+    text-align: center;
+  }
+
+  .intro-features {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 28px 0 36px;
+    text-align: left;
+  }
+
+  .intro-feature {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 14px;
+    color: var(--text);
+  }
+
+  .feature-icon {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    border-radius: 50%;
+    background: rgba(233,30,140,0.2);
+    border: 1px solid rgba(233,30,140,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+
+  .start-btn {
+    display: block;
+    width: 100%;
+    background: linear-gradient(135deg, var(--rose), var(--pink));
+    color: white;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    padding: 20px 32px;
+    border-radius: 16px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 32px rgba(233,30,140,0.35);
+  }
+
+  .start-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 48px rgba(233,30,140,0.45);
+  }
+
+  .time-note {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 12px;
+  }
+
+  /* ─── AUTHOR ─── */
+  .author-strip {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(212,168,255,0.1);
+  }
+
+  .author-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--rose), var(--lavender));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    min-width: 44px;
+  }
+
+  .author-info { flex: 1; }
+  .author-name { font-size: 14px; color: var(--white); font-weight: 600; }
+  .author-role { font-size: 12px; color: var(--muted); }
+
+  @media (max-width: 480px) {
+    .card { padding: 32px 24px; }
+    .quiz-title { font-size: 24px; }
+    .question-text { font-size: 19px; }
+    .result-title { font-size: 22px; }
+    .price-new { font-size: 32px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+<div class="blob blob-3"></div>
+
+<div class="container">
+  <div class="card">
+
+    <!-- ═══ TELA INICIAL ═══ -->
+    <div id="intro" class="intro-screen">
+      <div class="quiz-header">
+        <span class="moon-icon">🌙</span>
+        <span class="quiz-badge">✦ Diagnóstico Gratuito ✦</span>
+        <h1 class="quiz-title">Descubra o que está <span>bloqueando seu sono</span></h1>
+        <p class="quiz-subtitle">Responda 5 perguntas rápidas e receba um diagnóstico personalizado — e o caminho exato para dormir melhor.</p>
+      </div>
+
+      <div class="intro-features">
+        <div class="intro-feature">
+          <div class="feature-icon">⚡</div>
+          <span>Leva menos de 2 minutos para completar</span>
+        </div>
+        <div class="intro-feature">
+          <div class="feature-icon">🎯</div>
+          <span>Diagnóstico personalizado ao seu perfil</span>
+        </div>
+        <div class="intro-feature">
+          <div class="feature-icon">🌿</div>
+          <span>Solução natural — sem remédio, sem efeito colateral</span>
+        </div>
+      </div>
+
+      <button class="start-btn" onclick="startQuiz()">Quero meu diagnóstico agora →</button>
+      <p class="time-note">⏱ 2 minutos • 100% gratuito</p>
+
+      <div class="author-strip">
+        <div class="author-avatar">🌸</div>
+        <div class="author-info">
+          <div class="author-name">Ana Serena</div>
+          <div class="author-role">Especialista em Saúde Natural do Sono</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ QUIZ ═══ -->
+    <div id="quiz" style="display:none;">
+
+      <!-- Progresso -->
+      <div class="progress-wrap">
+        <div class="progress-info">
+          <span class="progress-label">Seu diagnóstico</span>
+          <span class="progress-count" id="progress-count">Pergunta 1 de 5</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progress-fill" style="width:20%"></div>
+        </div>
+      </div>
+
+      <!-- Pergunta 1 -->
+      <div class="question-block active" id="q1">
+        <span class="question-number">Pergunta 01</span>
+        <p class="question-text">Como costuma ser o seu sono nos últimos meses?</p>
+        <div class="options">
+          <button class="option-btn" onclick="selectOption(1,'A')">
+            <span class="option-letter">A</span>
+            Durmo bem, mas acordo cansada mesmo assim
+          </button>
+          <button class="option-btn" onclick="selectOption(1,'B')">
+            <span class="option-letter">B</span>
+            Demoro muito pra pegar no sono e fico com a mente acelerada
+          </button>
+          <button class="option-btn" onclick="selectOption(1,'C')">
+            <span class="option-letter">C</span>
+            Acordo várias vezes durante a noite e não consigo voltar a dormir
+          </button>
+        </div>
+      </div>
+
+      <!-- Pergunta 2 -->
+      <div class="question-block" id="q2">
+        <span class="question-number">Pergunta 02</span>
+        <p class="question-text">Como a ansiedade aparece no seu dia a dia?</p>
+        <div class="options">
+          <button class="option-btn" onclick="selectOption(2,'A')">
+            <span class="option-letter">A</span>
+            Sinto preocupação constante, mas consigo funcionar
+          </button>
+          <button class="option-btn" onclick="selectOption(2,'B')">
+            <span class="option-letter">B</span>
+            Fico irritada e qualquer coisa pequena me desestabiliza
+          </button>
+          <button class="option-btn" onclick="selectOption(2,'C')">
+            <span class="option-letter">C</span>
+            Não consigo desligar a cabeça nunca — nem à noite
+          </button>
+        </div>
+      </div>
+
+      <!-- Pergunta 3 -->
+      <div class="question-block" id="q3">
+        <span class="question-number">Pergunta 03</span>
+        <p class="question-text">Você já tentou alguma solução para dormir melhor?</p>
+        <div class="options">
+          <button class="option-btn" onclick="selectOption(3,'A')">
+            <span class="option-letter">A</span>
+            Já tomei remédio para dormir, mas não quero depender disso
+          </button>
+          <button class="option-btn" onclick="selectOption(3,'B')">
+            <span class="option-letter">B</span>
+            Tentei chás e coisas naturais, mas nada funcionou de verdade
+          </button>
+          <button class="option-btn" onclick="selectOption(3,'C')">
+            <span class="option-letter">C</span>
+            Nunca tentei nada — não sei nem por onde começar
+          </button>
+        </div>
+      </div>
+
+      <!-- Pergunta 4 -->
+      <div class="question-block" id="q4">
+        <span class="question-number">Pergunta 04</span>
+        <p class="question-text">Qual frase descreve melhor como você acorda de manhã?</p>
+        <div class="options">
+          <button class="option-btn" onclick="selectOption(4,'A')">
+            <span class="option-letter">A</span>
+            Acordo no automático, sem energia, já pensando nos problemas do dia
+          </button>
+          <button class="option-btn" onclick="selectOption(4,'B')">
+            <span class="option-letter">B</span>
+            Acordo com o coração acelerado ou já ansiosa sem motivo aparente
+          </button>
+          <button class="option-btn" onclick="selectOption(4,'C')">
+            <span class="option-letter">C</span>
+            Acordo tão cansada quanto quando deitei — como se não tivesse dormido
+          </button>
+        </div>
+      </div>
+
+      <!-- Pergunta 5 -->
+      <div class="question-block" id="q5">
+        <span class="question-number">Pergunta 05</span>
+        <p class="question-text">O que você mais quer conquistar com um sono de qualidade?</p>
+        <div class="options">
+          <button class="option-btn" onclick="selectOption(5,'A')">
+            <span class="option-letter">A</span>
+            Ter energia e disposição para aproveitar minha vida e minha família
+          </button>
+          <button class="option-btn" onclick="selectOption(5,'B')">
+            <span class="option-letter">B</span>
+            Parar de depender de remédio e me cuidar de forma natural
+          </button>
+          <button class="option-btn" onclick="selectOption(5,'C')">
+            <span class="option-letter">C</span>
+            Simplesmente acordar bem — algo que já não sei o que é
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ═══ RESULTADO 1 — PERFIL INÍCIO ═══ -->
+    <div id="result-inicio" class="result-block">
+      <span class="result-emoji">🌱</span>
+      <span class="result-badge inicio">Sono Silenciosamente Comprometido</span>
+      <h2 class="result-title">Seu sono está <span>pedindo atenção</span></h2>
+      <div class="result-divider"></div>
+      <div class="result-text">
+        <strong>Seu diagnóstico:</strong> Seu sono está comprometido de um jeito silencioso — você funciona, mas não está bem de verdade. Você acorda cansada, sem energia, e convive com isso há tempo suficiente para achar que é normal.<br><br>
+        Não é normal. E você não precisa continuar assim. O <strong>Protocolo Noites Serenas</strong> foi feito exatamente para mulheres como você — que parecem estar bem por fora, mas sentem que algo está errado por dentro.
+      </div>
+      <div class="urgency-box">
+        <p>⚠️ Sono ruim silencioso é o mais perigoso — porque a gente aprende a conviver com ele. <strong>Quanto mais tempo passa, mais difícil fica de reverter.</strong> Mas com o protocolo certo, você pode mudar isso em 21 dias.</p>
+      </div>
+      <div class="price-tag">
+        <span class="price-old">R$ 37</span>
+        <span class="price-new"><span>R$</span> 19,90</span>
+        <span class="price-label">HOJE</span>
+      </div>
+      <a href="SEU-LINK-AQUI" class="cta-btn">Quero o Protocolo Noites Serenas →</a>
+      <p class="cta-guarantee">🔒 Pagamento seguro • Acesso imediato • 7 dias de garantia</p>
+    </div>
+
+    <!-- ═══ RESULTADO 2 — PERFIL MÉDIO ═══ -->
+    <div id="result-medio" class="result-block">
+      <span class="result-emoji">🌙</span>
+      <span class="result-badge medio">Ansiedade Sabotando o Sono</span>
+      <h2 class="result-title">Sua mente <span>não desliga</span> — e isso tem solução</h2>
+      <div class="result-divider"></div>
+      <div class="result-text">
+        <strong>Seu diagnóstico:</strong> Sua ansiedade e seu sono ruim estão alimentando um ao outro — e isso está te esgotando mais do que você imagina. Você tenta descansar, mas a cabeça não deixa. Você acorda cansada, o dia fica difícil, e à noite a cabeça volta a disparar.<br><br>
+        Esse ciclo tem nome, tem causa e — principalmente — tem solução natural. O <strong>Protocolo Noites Serenas</strong> quebra esse ciclo de forma gentil e definitiva.
+      </div>
+      <div class="urgency-box">
+        <p>⚠️ Ansiedade crônica + sono ruim aumentam em <strong>3x o risco de desenvolver depressão</strong> e afetam peso, memória e imunidade. Você merece sair desse ciclo agora.</p>
+      </div>
+      <div class="price-tag">
+        <span class="price-old">R$ 37</span>
+        <span class="price-new"><span>R$</span> 19,90</span>
+        <span class="price-label">HOJE</span>
+      </div>
+      <a href="SEU-LINK-AQUI" class="cta-btn">Quero quebrar esse ciclo agora →</a>
+      <p class="cta-guarantee">🔒 Pagamento seguro • Acesso imediato • 7 dias de garantia</p>
+    </div>
+
+    <!-- ═══ RESULTADO 3 — PERFIL QUENTE ═══ -->
+    <div id="result-quente" class="result-block">
+      <span class="result-emoji">💜</span>
+      <span class="result-badge quente">Exaustão Profunda — Urgente</span>
+      <h2 class="result-title">Seu corpo está <span>gritando por socorro</span></h2>
+      <div class="result-divider"></div>
+      <div class="result-text">
+        <strong>Seu diagnóstico:</strong> Você está exausta — e não é frescura, nem fraqueza. É o seu corpo depois de muito tempo pedindo socorro sem ser ouvido. Você mal lembra como é acordar com energia. Mal lembra como é uma noite de sono de verdade.<br><br>
+        Eu já estive exatamente onde você está. E sei o quanto isso pesa em tudo — no seu trabalho, nos seus relacionamentos, na sua alegria de viver. O <strong>Protocolo Noites Serenas</strong> vai te mostrar, passo a passo, como recuperar seu sono e sua calma — sem remédio.
+      </div>
+      <div class="urgency-box">
+        <p>⚠️ No seu nível de exaustão, cada semana que passa sem agir torna a recuperação mais lenta. <strong>O melhor momento para começar é hoje.</strong> O segundo melhor é amanhã — mas amanhã você vai estar mais cansada do que agora.</p>
+      </div>
+      <div class="price-tag">
+        <span class="price-old">R$ 37</span>
+        <span class="price-new"><span>R$</span> 19,90</span>
+        <span class="price-label">HOJE</span>
+      </div>
+      <a href="SEU-LINK-AQUI" class="cta-btn">Começar minha recuperação agora →</a>
+      <p class="cta-guarantee">🔒 Pagamento seguro • Acesso imediato • 7 dias de garantia</p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const answers = {};
+  let current = 1;
+
+  function startQuiz() {
+    document.getElementById('intro').style.display = 'none';
+    document.getElementById('quiz').style.display = 'block';
+  }
+
+  function selectOption(question, option) {
+    // Highlight selecionado
+    const block = document.getElementById('q' + question);
+    block.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('selected'));
+    event.currentTarget.classList.add('selected');
+
+    answers[question] = option;
+
+    // Avança após pequeno delay
+    setTimeout(() => {
+      if (question < 5) {
+        goToQuestion(question + 1);
+      } else {
+        showResult();
+      }
+    }, 400);
+  }
+
+  function goToQuestion(num) {
+    document.getElementById('q' + current).classList.remove('active');
+    current = num;
+    document.getElementById('q' + num).classList.add('active');
+
+    // Atualiza progresso
+    const pct = (num / 5) * 100;
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('progress-count').textContent = 'Pergunta ' + num + ' de 5';
+  }
+
+  function showResult() {
+    document.getElementById('quiz').style.display = 'none';
+
+    // Conta respostas C (mais quentes), B (médias), A (início)
+    let countC = 0, countB = 0, countA = 0;
+    for (let i = 1; i <= 5; i++) {
+      if (answers[i] === 'C') countC++;
+      else if (answers[i] === 'B') countB++;
+      else countA++;
+    }
+
+    let resultId;
+    if (countC >= 3) {
+      resultId = 'result-quente';
+    } else if (countB >= 2 || countC >= 2) {
+      resultId = 'result-medio';
+    } else {
+      resultId = 'result-inicio';
+    }
+
+    const resultEl = document.getElementById(resultId);
+    resultEl.classList.add('active');
+
+    // Scroll suave pro topo
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+</script>
+
+</body>
+</html>
