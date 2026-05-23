@@ -771,24 +771,32 @@
   function showResult() {
     document.getElementById('quiz').style.display = 'none';
 
-    // Conta respostas C (mais quentes), B (médias), A (início)
-    let countC = 0, countB = 0, countA = 0;
-    for (let i = 1; i <= 5; i++) {
+    // Esconde todos os resultados primeiro
+    ['result-inicio', 'result-medio', 'result-quente'].forEach(function(id) {
+      var el = document.getElementById(id);
+      el.classList.remove('active');
+      el.style.display = 'none';
+    });
+
+    // Conta respostas
+    var countC = 0, countB = 0, countA = 0;
+    for (var i = 1; i <= 5; i++) {
       if (answers[i] === 'C') countC++;
       else if (answers[i] === 'B') countB++;
       else countA++;
     }
 
-    let resultId;
-    if (countC >= 3) {
+    var resultId;
+    if (countC >= 2) {
       resultId = 'result-quente';
-    } else if (countB >= 2 || countC >= 2) {
+    } else if (countB >= 2) {
       resultId = 'result-medio';
     } else {
       resultId = 'result-inicio';
     }
 
-    const resultEl = document.getElementById(resultId);
+    var resultEl = document.getElementById(resultId);
+    resultEl.style.display = 'block';
     resultEl.classList.add('active');
 
     // Scroll suave pro topo
